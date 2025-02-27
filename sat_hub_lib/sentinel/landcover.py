@@ -33,11 +33,14 @@ class SAT_LANDCOVER_MAPCODE(Enum):
         return (0, 0, 0, 255)
 
 
-class Landcover(SentinelBaseType,IsMappable):
-      
+class Landcover(SentinelBaseType, IsMappable):
+
     def get_default_value_map(self):
-      # Default value for mapping
-        return {SAT_LANDCOVER_MAPCODE.TREES.code: 1, SAT_LANDCOVER_MAPCODE.GRASS.code: 0.8}
+        # Default value for mapping
+        return {
+            SAT_LANDCOVER_MAPCODE.TREES.code: 1,
+            SAT_LANDCOVER_MAPCODE.GRASS.code: 0.8,
+        }
 
     def write_geotiff(self, output_file: str = None):
         if output_file is None:

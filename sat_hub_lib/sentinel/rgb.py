@@ -1,13 +1,13 @@
 from io import BytesIO
 import numpy as np
 import rasterio
-from .basetype_sent import SentinelBaseType , SentinelBaseSettings
+from .basetype_sent import SentinelBaseType, SentinelBaseSettings
 from sentinelhub import SentinelHubRequest, DataCollection, MosaickingOrder
 
 
 class RGB(SentinelBaseType):
 
-    def __init__(self, conf: SentinelBaseSettings,brightness: float = 2.5):
+    def __init__(self, conf: SentinelBaseSettings, brightness: float = 2.5):
         super().__init__(conf=conf)
         self.brightness = brightness
 

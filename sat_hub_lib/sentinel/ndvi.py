@@ -4,7 +4,6 @@ from sentinelhub import SentinelHubRequest, DataCollection
 
 
 class NDVI(SentinelBaseType):
- 
 
     def write_geotiff(self, output_file: str = None):
         if output_file is None:
@@ -44,27 +43,28 @@ function evaluatePixel(sample) {
     return [normalized_ndvi];
 }
 """
+
     color_ramp = [
-        (0, 0x0c0c0c),
-        (30, 0xbfbfbf),
-        (40, 0xdbdbdb),
-        (50, 0xeaeaea),
-        (53, 0xfff9cc),
-        (55, 0xede8b5),
-        (58, 0xddd89b),
-        (60, 0xccc682),
-        (63, 0xbcb76b),
-        (65, 0xafc160),
-        (68, 0xa3cc59),
-        (70, 0x91bf51),
-        (75, 0x7fb247),
-        (80, 0x70a33f),
+        (0, 0x0C0C0C),
+        (30, 0xBFBFBF),
+        (40, 0xDBDBDB),
+        (50, 0xEAEAEA),
+        (53, 0xFFF9CC),
+        (55, 0xEDE8B5),
+        (58, 0xDDD89B),
+        (60, 0xCCC682),
+        (63, 0xBCB76B),
+        (65, 0xAFC160),
+        (68, 0xA3CC59),
+        (70, 0x91BF51),
+        (75, 0x7FB247),
+        (80, 0x70A33F),
         (85, 0x609635),
-        (90, 0x4f892d),
-        (95, 0x3f7c23),
-        (100, 0x306d1c),
+        (90, 0x4F892D),
+        (95, 0x3F7C23),
+        (100, 0x306D1C),
         (105, 0x216011),
-        (110, 0x0f540a),
+        (110, 0x0F540A),
         (150, 0x004400),
     ]
 

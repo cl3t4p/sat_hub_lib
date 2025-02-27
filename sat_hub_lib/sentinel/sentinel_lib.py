@@ -25,23 +25,24 @@ def calculate_dimensions(bbox, resolution):
 
     return width_px, height_px
 
-def _meters_to_decimal_degrees(meters, latitude=None, direction='lat'):
+
+def _meters_to_decimal_degrees(meters, latitude=None, direction="lat"):
     """
     Convert a distance in meters to an equivalent value in decimal degrees.
-    
+
     For latitude, the conversion is roughly constant (~111,320 meters per degree).
     For longitude, the conversion factor decreases with latitude:
-    
+
         degrees_lon ≈ meters / (111320 * cos(latitude_in_radians))
-    
+
     Parameters:
         meters (float): Distance in meters.
         latitude (float, optional): Latitude in decimal degrees, required for longitude conversion.
         direction (str): 'lat' for latitude or 'lon' for longitude conversion. Default is 'lat'.
-        
+
     Returns:
         float: The equivalent distance in decimal degrees.
-    
+
     Raises:
         ValueError: If direction is 'lon' and no latitude is provided,
                     or if an unsupported direction is given.
@@ -49,9 +50,9 @@ def _meters_to_decimal_degrees(meters, latitude=None, direction='lat'):
     # Approximate length of one degree of latitude in meters
     deg_lat_meters = 111320.0
 
-    if direction.lower() == 'lat':
+    if direction.lower() == "lat":
         return meters / deg_lat_meters
-    elif direction.lower() == 'lon':
+    elif direction.lower() == "lon":
         if latitude is None:
             raise ValueError("Latitude must be provided for longitude conversion.")
         # Convert latitude to radians for the cosine function
@@ -61,9 +62,9 @@ def _meters_to_decimal_degrees(meters, latitude=None, direction='lat'):
         return meters / deg_lon_meters
     else:
         raise ValueError("Direction must be 'lat' or 'lon'.")
-    
 
-def get_resolution_degree_from_meters(bounding_box : BBox, resolution:float):
+
+def get_resolution_degree_from_meters(bounding_box: BBox, resolution: float):
     """
     Calculate the latitudinal and longitudinal resolution in degrees based on a given resolution in meters.
 
@@ -77,16 +78,15 @@ def get_resolution_degree_from_meters(bounding_box : BBox, resolution:float):
             - float: Latitudinal resolution in degrees.
             - float: Longitudinal resolution in degrees.
     """
-    lat = _meters_to_decimal_degrees(resolution, 'lat')
-    lon = _meters_to_decimal_degrees(resolution, bounding_box.middle[0], 'lon')
+    lat = _meters_to_decimal_degrees(resolution, "lat")
+    lon = _meters_to_decimal_degrees(resolution, bounding_box.middle[0], "lon")
     return (lat, lon)
 
 
-
-def get_valid_resolution(bounding_box : BBox, resolution,max_pixels=2500):
-    lon,lat = get_resolution_degree_from_meters(bounding_box,resolution)
-    calculated_dim = calculate_dimensions(bounding_box,lon)
-    #TODO : Fix the resolution with a function and not with a recursive call
+def get_valid_resolution(bounding_box: BBox, resolution, max_pixels=2500):
+    lon, lat = get_resolution_degree_from_meters(bounding_box, resolution)
+    calculated_dim = calculate_dimensions(bounding_box, lon)
+    # TODO : Fix the resolution with a function and not with a recursive call
     if calculated_dim[0] > max_pixels or calculated_dim[1] > max_pixels:
-        return get_valid_resolution(bounding_box,resolution+1,max_pixels)
+        return get_valid_resolution(bounding_box, resolution + 1, max_pixels)
     return resolution

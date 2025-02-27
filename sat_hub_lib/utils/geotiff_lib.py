@@ -57,10 +57,13 @@ def extract_boundingbox_into_matrix(geotiffs, bbox: Polygon):
         np.array: The matrix containing the extracted bounding box.
         Affine: The transform of the output GeoTIFF file
     """
-    memory_file = MemoryFile()
-    extract_boundingbox_into_tiff(geotiffs, memory_file, bbox)
-    with rasterio.open(memory_file, "r") as src:
-        return src.read(), src.transform, src.meta
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        memory_file = os.path.join(temp_dir, "temp.tif")
+        extract_boundingbox_into_tiff(geotiffs, memory_file, bbox)
+        with rasterio.open(memory_file, "r") as src:
+            return src.read(), src.transform, src.meta
 
 
 def tiff_to_png(input_file, output_file):
@@ -91,7 +94,6 @@ def apply_colormap(input_file, color_map: dict, band=1):
         src.write_colormap(band, color_map)
 
 
-
 def generate_colormap(ramp, num_steps=256):
     """
     Generates a continuous colormap dictionary from given ramp values.
@@ -99,26 +101,29 @@ def generate_colormap(ramp, num_steps=256):
     Args:
         ramp (list): List of (value, hex_color) pairs.
         num_steps (int): Number of discrete steps for interpolation.
-    
+
     Returns:
         dict: A colormap mapping discrete values to RGB tuples.
     """
     # Extract known values and corresponding colors
     values = np.array([v[0] for v in ramp])
-    colors = np.array([[(v[1] >> 16) & 255, (v[1] >> 8) & 255, v[1] & 255] for v in ramp], dtype=np.float32)
-    
+    colors = np.array(
+        [[(v[1] >> 16) & 255, (v[1] >> 8) & 255, v[1] & 255] for v in ramp],
+        dtype=np.float32,
+    )
+
     # Interpolating each RGB channel
-    interp_r = interp1d(values, colors[:, 0], kind='linear', fill_value="extrapolate")
-    interp_g = interp1d(values, colors[:, 1], kind='linear', fill_value="extrapolate")
-    interp_b = interp1d(values, colors[:, 2], kind='linear', fill_value="extrapolate")
-    
+    interp_r = interp1d(values, colors[:, 0], kind="linear", fill_value="extrapolate")
+    interp_g = interp1d(values, colors[:, 1], kind="linear", fill_value="extrapolate")
+    interp_b = interp1d(values, colors[:, 2], kind="linear", fill_value="extrapolate")
+
     # Generate evenly spaced steps
     step_values = np.linspace(values.min(), values.max(), num_steps)
-    
+
     # Apply interpolation to get colors at each step
     interpolated_colors = {
         i: (int(interp_r(v)), int(interp_g(v)), int(interp_b(v)))
         for i, v in enumerate(step_values)
     }
-    
+
     return interpolated_colors

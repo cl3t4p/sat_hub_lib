@@ -6,6 +6,7 @@ from sentinelhub import SentinelHubRequest, MimeType, CRS, SHConfig
 import sentinelhub
 import sat_hub_lib.sentinel.sentinel_lib as sentinel_lib
 
+
 class SentinelBaseSettings:
     def __init__(
         self,
@@ -28,6 +29,7 @@ class SentinelBaseSettings:
         self.cloud_coverage = cloud_coverage
         self.resolution = resolution
         self.output_file = output_file
+
 
 class SentinelBaseType(BaseSatType):
 

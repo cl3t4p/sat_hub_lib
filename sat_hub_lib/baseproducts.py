@@ -8,14 +8,13 @@ import rasterio
 
 
 class BaseProduct(ABC):
-    
 
     # def __init__(self, config: dict):
     #     self.__output_file_path = self._gen_output_filepath(config["output"])
     #     #self.output_file = None
     #     self.log = logging.getLogger(type(self).__name__)
-        
-    def __init__(self,ouput_file: str = None):
+
+    def __init__(self, ouput_file: str = None):
         self.__output_file_path = self._gen_output_filepath(ouput_file)
         self.log = logging.getLogger(type(self).__name__)
 
@@ -30,7 +29,6 @@ class BaseProduct(ABC):
         Raises:
         NotImplementedError: This method must be overridden in a subclass.
         """
-
 
     @abstractmethod
     def extract_bandmatrix(self):
@@ -74,7 +72,7 @@ class BaseProduct(ABC):
         if not os.path.exists(self.__output_file_path) and no_create:
             os.makedirs(os.path.dirname(self.__output_file_path), exist_ok=True)
         return self.__output_file_path
-    
+
     def _default_rasterio_preprocess(self, geotiff):
         self.geotiff_meta = geotiff.meta
         self.geotiff_trasform = geotiff.transform
@@ -114,23 +112,37 @@ class BaseSatType(BaseProduct):
     #     self.geotiff_trasform = None
     #     self.geotiff_meta = None
 
-    def __init__(self,point1: tuple,point2: tuple,ouput_file: str = None):
+    def __init__(self, point1: tuple, point2: tuple, ouput_file: str = None):
         super().__init__(ouput_file)
-        self.NW_point = Point(point1)
-        self.SE_point = Point(point2)
-        self.NW_Long = point1[1]
-        self.NW_Lat = point1[0]
-        self.SE_Long = point2[1]
-        self.SE_Lat = point2[0]
-        # Output folder
 
+        lat1, lon1 = point1
+        lat2, lon2 = point2
+
+        # Ensure NW (Top-left) and SE (Bottom-right) are correctly assigned
+        NW_Lat, SE_Lat = max(lat1, lat2), min(
+            lat1, lat2
+        )  # Highest lat is NW, lowest lat is SE
+        NW_Long, SE_Long = min(lon1, lon2), max(
+            lon1, lon2
+        )  # Lowest lon is NW, highest lon is SE
+
+        # Assign corrected points
+        self.NW_point = Point((NW_Lat, NW_Long))
+        self.SE_point = Point((SE_Lat, SE_Long))
+
+        # Assign attributes
+        self.NW_Long, self.NW_Lat = NW_Long, NW_Lat
+        self.SE_Long, self.SE_Lat = SE_Long, SE_Lat
+
+        # Bounding box
         self.bounding_box = Polygon(
             [
-                (self.NW_Long, self.NW_Lat),
-                (self.NW_Long, self.SE_Lat),
-                (self.SE_Long, self.SE_Lat),
-                (self.SE_Long, self.NW_Lat),
+                (self.NW_Long, self.NW_Lat),  # Top-left
+                (self.NW_Long, self.SE_Lat),  # Bottom-left
+                (self.SE_Long, self.SE_Lat),  # Bottom-right
+                (self.SE_Long, self.NW_Lat),  # Top-right
             ]
         )
-        self.geotiff_trasform = None
+
+        self.geotiff_transform = None
         self.geotiff_meta = None

@@ -45,7 +45,7 @@ class ESAWC_MAPCODE(Enum):
         return (0, 0, 0)
 
 
-class S3_EsaWorldCover(BaseSat_GeoTiff,IsMappable):
+class S3_EsaWorldCover(BaseSat_GeoTiff, IsMappable):
     """
     #### Documentation for the ESA World Cover product
     Version 1 [WorldCover_PUM_V1.0.pdf](https://esa-worldcover.s3.eu-central-1.amazonaws.com/v100/2020/docs/WorldCover_PUM_V1.0.pdf)
@@ -78,34 +78,39 @@ class S3_EsaWorldCover(BaseSat_GeoTiff,IsMappable):
     #         S3_EsaWorldCover.bucket_name,
     #         "eu-central-1",
     #     )
-    
-    def __init__(self, point1: tuple, point2: tuple, version: int,cache_folder: str = "cache", disable_cache: bool = False, output_file: str = None, ):
+
+    def __init__(
+        self,
+        point1: tuple,
+        point2: tuple,
+        version: int,
+        cache_folder: str = "cache",
+        disable_cache: bool = False,
+        output_file: str = None,
+    ):
         super().__init__(point1, point2, output_file)
         self.cache_folder = cache_folder
-        
+        self.use_cache = not disable_cache
         # Default resolution for the ESA World Cover
         self.resolution = 20
         # Check if the cache folder exists otherwise create it
         self.cache_folder = f"{self.cache_folder}/{self.__class__.__name__}"
-        if not os.path.exists(self.cache_folder):
+        if not os.path.exists(self.cache_folder) and self.use_cache:
             os.makedirs(self.cache_folder)
-            
+
         self.s3_client = boto3.client(
-             "s3",
-             region_name="eu-central-1",
-             config=botocore.client.Config(signature_version=botocore.UNSIGNED),
+            "s3",
+            region_name="eu-central-1",
+            config=botocore.client.Config(signature_version=botocore.UNSIGNED),
         )
-        
+
         self.version = version
-        self.use_cache = not disable_cache
         self.s3cache = simplecache.S3Cache(
-             self.cache_folder,
-             S3_EsaWorldCover.bucket_name,
+            self.cache_folder,
+            S3_EsaWorldCover.bucket_name,
             "eu-central-1",
         )
-         
-        
-        
+
     def get_default_value_map(self):
         return {ESAWC_MAPCODE.TREE_COVER.code: 1, ESAWC_MAPCODE.GRASSLAND.code: 0.2}
 
@@ -160,6 +165,7 @@ class S3_EsaWorldCover(BaseSat_GeoTiff,IsMappable):
             key = f"{prefix}{tile}_Map.tif"
 
             if not self.use_cache:
+                self.log.info(f"Getting {key}")
                 geotiffs.append(f"s3://{S3_EsaWorldCover.bucket_name}/{key}")
             else:
                 local_filename = f"{self.cache_folder}/{key[14:]}"
@@ -195,7 +201,7 @@ class S3_EsaWorldCover(BaseSat_GeoTiff,IsMappable):
         tiles = []
         for feature in geojson["features"]:
             polygon = Polygon(feature["geometry"]["coordinates"][0])
-            cord_bounding_box =  box(
+            cord_bounding_box = box(
                 self.NW_Long, self.SE_Lat, self.SE_Long, self.NW_Lat
             )
             if polygon.intersects(cord_bounding_box):
@@ -209,5 +215,7 @@ class S3_EsaWorldCover(BaseSat_GeoTiff,IsMappable):
             case 2:
                 return "v200/2021/map/ESA_WorldCover_10m_2021_v200_"
             case _:
-                self.log.error("ESA World Cover version not supported please use 1 or 2")
+                self.log.error(
+                    "ESA World Cover version not supported please use 1 or 2"
+                )
                 exit()

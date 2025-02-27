@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name='sat_hub',
     packages=find_packages(),
-    version='0.1.0',
+    version='0.0.5',
     description='Package for downloading and extracting data from various sources',
     url = 'https://github.com/cl3t4p/sat_hub',
     author='cl3t4p',
@@ -15,6 +15,7 @@ setup(
         'shapely==2.0.6',
         'scipy==1.15.1',
         'pillow==11.1.0',
-        'sentinelhub==3.11.0'
+        'sentinelhub==3.11.0',
+        'sympy==1.13.3'
     ],
 )
