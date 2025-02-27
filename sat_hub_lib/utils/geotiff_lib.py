@@ -57,37 +57,10 @@ def extract_boundingbox_into_matrix(geotiffs, bbox: Polygon):
         np.array: The matrix containing the extracted bounding box.
         Affine: The transform of the output GeoTIFF file
     """
-    # Open a MemoryFile to store the output GeoTIFF as rasterio only works with files
-    with MemoryFile() as memfile:
-        for geotiff in geotiffs:
-
-            # Check if to get it from the cache or download it
-            if type(geotiff) == str:
-                geotiff = rasterio.open(geotiff, "r")
-
-            # Calculate the window to read the subset
-            window = from_bounds(*bbox.bounds, transform=geotiff.transform)
-            # Read the subset
-            subset = geotiff.read(window=window)
-            transform = geotiff.window_transform(window)
-
-            # Define metadata for the new file
-            out_meta = geotiff.meta.copy()
-            out_meta.update(
-                {
-                    "driver": "GTiff",
-                    "height": subset.shape[1],
-                    "width": subset.shape[2],
-                    "transform": transform,
-                }
-            )
-
-            # Save the subset to a new GeoTIFF
-            with memfile.open(**out_meta) as dest:
-                dest.write(subset)
-
-        output_file = memfile.open()
-        return output_file.read(), output_file.transform, output_file.meta
+    memory_file = MemoryFile()
+    extract_boundingbox_into_tiff(geotiffs, memory_file, bbox)
+    with rasterio.open(memory_file, "r") as src:
+        return src.read(), src.transform, src.meta
 
 
 def tiff_to_png(input_file, output_file):
