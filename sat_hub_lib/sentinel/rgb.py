@@ -1,19 +1,19 @@
 from io import BytesIO
 import numpy as np
 import rasterio
-from .basetype_sent import SentinelBaseType
+from .basetype_sent import SentinelBaseType , SentinelBaseSettings
 from sentinelhub import SentinelHubRequest, DataCollection, MosaickingOrder
 
 
 class RGB(SentinelBaseType):
 
-    def __init__(self, args: dict):
-        super().__init__(args)
-        self.brightness = args.get("brightness")
+    def __init__(self, conf: SentinelBaseSettings,brightness: float = 2.5):
+        super().__init__(conf=conf)
+        self.brightness = brightness
 
     def write_geotiff(self, output_file: str = None):
         if output_file is None:
-            output_file = f"{self.get_outfolder()}/output.tif"
+            output_file = self.get_output_file_path()
         response = self._get_response()
 
         data_in_memory = BytesIO(response[0].content)

@@ -3,19 +3,24 @@ from sat_hub_lib.geotiff.basetype_geotiff import BaseSat_GeoTiff
 from sat_hub_lib.extension import IsMappable
 
 class Local_GeoTiff(BaseSat_GeoTiff,IsMappable):
-    def __init__(self, config):
-        super().__init__(config)
-        self.input_file = config["input_file"]
-        self.resolution = None
+    # def __init__(self, config):
+    #     super().__init__(config)
+    #     self.input_file = config["input_file"]
+    #     self.resolution = config["resolution"]
+    
+    def __init__(self, input_file: str, point1: tuple, point2: tuple,resolution: tuple, output_file: str = None):
+        super().__init__(point1, point2, output_file)
+        self.input_file = input_file
+        self.resolution = resolution
 
     def get_default_value_map(self):
         return {1: 1}
     
     def write_geotiff(self, output_file: str = None):
         if output_file is None:
-            output_file = f"{self.get_outfolder()}/output.tif"
+            output_file = self.get_output_file_path()
 
-        self.output_file = output_file
+
         with rasterio.open(self.input_file) as src:
             data, meta = self.__default_rasterio_preprocess(src)
             _range = data.shape[0]
@@ -33,7 +38,7 @@ class Local_GeoTiff(BaseSat_GeoTiff,IsMappable):
     
 
     def __default_rasterio_preprocess(self, geotiff):
-        self.resolution = self.geotiff_resolution_fixed(geotiff)
+        #self.resolution = self.geotiff_resolution_fixed(geotiff)
         return self._default_rasterio_preprocess(geotiff)
     
 

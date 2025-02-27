@@ -34,10 +34,6 @@ class SAT_LANDCOVER_MAPCODE(Enum):
 
 
 class Landcover(SentinelBaseType,IsMappable):
-
-    def __init__(self, args: dict):
-        super().__init__(args)
-        
       
     def get_default_value_map(self):
       # Default value for mapping
@@ -45,7 +41,7 @@ class Landcover(SentinelBaseType,IsMappable):
 
     def write_geotiff(self, output_file: str = None):
         if output_file is None:
-            output_file = f"{self.get_outfolder()}/landcover.tif"
+            output_file = self.get_output_file_path()
         super().write_geotiff(output_file)
         # Apply the color map
         geotiff_lib.apply_colormap(output_file, SAT_LANDCOVER_MAPCODE.get_color_map())

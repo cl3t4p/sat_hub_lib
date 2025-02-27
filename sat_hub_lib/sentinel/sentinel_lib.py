@@ -1,4 +1,3 @@
-import sentinelhub.geo_utils as geo_utils
 import math
 from sentinelhub import BBox
 

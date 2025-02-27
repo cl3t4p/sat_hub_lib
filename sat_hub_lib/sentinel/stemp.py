@@ -3,8 +3,6 @@ from sentinelhub import SentinelHubRequest, DataCollection
 
 
 class STemp(SentinelBaseType):
-    def __init__(self, config):
-        super().__init__(config)
 
     def _get_input_type(self):
         return [

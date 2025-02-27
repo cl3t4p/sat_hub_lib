@@ -54,37 +54,64 @@ class S3_EsaWorldCover(BaseSat_GeoTiff,IsMappable):
 
     bucket_name = "esa-worldcover"
 
-    def __init__(self, config):
-        super().__init__(config)
-        self.cache_folder = config["cache_folder"]
+    # def __init__(self, config):
+    #     super().__init__(config)
+    #     self.cache_folder = config["cache_folder"]
 
+    #     # Default resolution for the ESA World Cover
+    #     self.resolution = 20
+
+    #     # Check if the cache folder exists otherwise create it
+    #     self.cache_folder = f"{self.cache_folder}/{self.__class__.__name__}"
+    #     if not os.path.exists(self.cache_folder):
+    #         os.makedirs(self.cache_folder)
+
+    #     self.s3_client = boto3.client(
+    #         "s3",
+    #         region_name="eu-central-1",
+    #         config=botocore.client.Config(signature_version=botocore.UNSIGNED),
+    #     )
+    #     self.version = config["version"]
+    #     self.use_cache = not config["disable_cache"]
+    #     self.s3cache = simplecache.S3Cache(
+    #         self.cache_folder,
+    #         S3_EsaWorldCover.bucket_name,
+    #         "eu-central-1",
+    #     )
+    
+    def __init__(self, point1: tuple, point2: tuple, version: int,cache_folder: str = "cache", disable_cache: bool = False, output_file: str = None, ):
+        super().__init__(point1, point2, output_file)
+        self.cache_folder = cache_folder
+        
         # Default resolution for the ESA World Cover
         self.resolution = 20
-
         # Check if the cache folder exists otherwise create it
         self.cache_folder = f"{self.cache_folder}/{self.__class__.__name__}"
         if not os.path.exists(self.cache_folder):
             os.makedirs(self.cache_folder)
-
+            
         self.s3_client = boto3.client(
-            "s3",
-            region_name="eu-central-1",
-            config=botocore.client.Config(signature_version=botocore.UNSIGNED),
-        )
-        self.version = config["version"]
-        self.use_cache = not config["disable_cache"]
-        self.s3cache = simplecache.S3Cache(
-            self.cache_folder,
-            S3_EsaWorldCover.bucket_name,
-            "eu-central-1",
+             "s3",
+             region_name="eu-central-1",
+             config=botocore.client.Config(signature_version=botocore.UNSIGNED),
         )
         
+        self.version = version
+        self.use_cache = not disable_cache
+        self.s3cache = simplecache.S3Cache(
+             self.cache_folder,
+             S3_EsaWorldCover.bucket_name,
+            "eu-central-1",
+        )
+         
+        
+        
     def get_default_value_map(self):
-        return {ESAWC_MAPCODE.TREE_COVER.code: 1, ESAWC_MAPCODE.GRASSLAND.code: 0.8}
+        return {ESAWC_MAPCODE.TREE_COVER.code: 1, ESAWC_MAPCODE.GRASSLAND.code: 0.2}
 
     def write_geotiff(self, output_file=None):
         if output_file is None:
-            output_file = f"{self.get_outfolder()}/output.tif"
+            output_file = self.get_output_file_path()
         self.log.info("Processing ESA World Cover")
         # Get the tiles that intersect with the bounding box
         tile_names = self._get_tile_names()

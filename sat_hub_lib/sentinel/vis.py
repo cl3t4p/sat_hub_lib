@@ -1,10 +1,9 @@
 from .basetype_sent import SentinelBaseType
 from sentinelhub import SentinelHubRequest, DataCollection
+import warnings
 
-
+@warnings.warn("This class is deprecated. Use the 'RGB' class instead.")
 class Vis(SentinelBaseType):
-    def __init__(self, args: dict):
-        super().__init__(args)
 
     def _get_input_type(self):
         return [

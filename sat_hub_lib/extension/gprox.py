@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import datetime
 import numpy as np
 import rasterio
 from scipy import signal
@@ -13,11 +14,25 @@ class IsMappable(ABC):
 
 class GProx(BaseProduct):
 
-    def __init__(self, product: BaseSatType, config):
-        super().__init__(config)
-        self.meter_radius = config["meter_radius"]
-        self.value_map = config.get("value_map", None)
+    # def __init__(self, product: BaseSatType, config):
+    #     super().__init__(config)
+    #     self.meter_radius = config["meter_radius"]
+    #     self.value_map = config.get("value_map", None)
+    #     self.product = product
+    #     self.matrix = None
+        
+    #     if self.value_map is None:
+    #         if self.product.get_default_value_map is not None:
+    #             self.value_map = self.product.get_default_value_map()
+    #         else:
+    #             raise ValueError(f"Value map {self.product.__class__.__name__} is not provided and the product does not have a default value map.")
+            
+
+    def __init__(self, product: BaseSatType, meter_radius: int, value_map: dict = None, output_filepath: str = None):
         self.product = product
+        super().__init__(output_filepath)
+        self.meter_radius = meter_radius
+        self.value_map = value_map
         self.matrix = None
         
         if self.value_map is None:
@@ -25,11 +40,12 @@ class GProx(BaseProduct):
                 self.value_map = self.product.get_default_value_map()
             else:
                 raise ValueError(f"Value map {self.product.__class__.__name__} is not provided and the product does not have a default value map.")
+        
 
     def write_geotiff(self, output_file: str = None):
         if output_file is None:
-            output_file = f"{self.get_outfolder()}/gprox.tif"
-
+            output_file = self.get_output_file_path()
+        
         matrix = self.extract_bandmatrix()
         with rasterio.open(output_file, "w", **self.product.geotiff_meta) as dst:
             dst.write(matrix.astype(rasterio.uint8), 1)
@@ -137,3 +153,25 @@ class GProx(BaseProduct):
                             ) * 100)
         self.log.info(f"Percentage matrix calculated with shape {percentageMatrix.shape}")
         return percentageMatrix
+    
+    def _gen_output_filepath(self, out_filepath):
+        """
+        Generates an output file path based on the provided template or class name.
+
+        Args:
+            outfolder (str): The template for the output file path. If it contains
+                             the placeholder "*date_time*", it will be replaced with
+                             the current date and time in the format "YYYY-MM-DD_HH-MM-SS".
+                             If None, the output file path will be generated using
+                             the class name and the current date and time.
+
+        Returns:
+            str: The generated output file path.
+        """
+        time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        if out_filepath is not None:
+            return out_filepath.replace("*date_time*", time)
+        else:
+            className = type(self.product).__name__
+            # Default to use output folder
+            return f"output/GProx_{className}_{time}.tif"
