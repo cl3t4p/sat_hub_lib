@@ -1,5 +1,5 @@
 from enum import Enum
-from .basetype_sent import SentinelBaseType
+from .basetype_sent import SentinelBaseType, SentinelBaseSettings
 from sentinelhub import SentinelHubRequest, DataCollection
 import sat_hub_lib.utils.geotiff_lib as geotiff_lib
 from sat_hub_lib.extension import IsMappable
@@ -34,6 +34,14 @@ class SAT_LANDCOVER_MAPCODE(Enum):
 
 
 class Landcover(SentinelBaseType, IsMappable):
+  
+    def __init__(self, conf: SentinelBaseSettings,ndwi_threshold=0.2,ndvi_grass_min=0.3,ndvi_trees_min=0.6,ndbi_building_min=0.16):
+      super().__init__(conf)
+      self.ndwi_threshold = ndwi_threshold
+      self.ndvi_grass_min = ndvi_grass_min
+      self.ndvi_trees_min = ndvi_trees_min
+      self.ndbi_building_min = ndbi_building_min
+      
 
     def get_default_value_map(self):
         # Default value for mapping
@@ -67,36 +75,57 @@ class Landcover(SentinelBaseType, IsMappable):
 function setup() {
   return {
     input: [{
-      bands: ["B03", "B04", "B08", "B11", "B12",],
-      units: "REFLECTANCE"
+      bands: ["B03", "B04", "B08", "B11",],
     }],
     output: { bands: 1, sampleType: "UINT8" }
   };
 }
 
-function evaluatePixel(sample) {
-  // Calculate indices
-  let ndwi = (sample.B03 - sample.B08) / (sample.B03 + sample.B08);  // Water
-  let ndvi = (sample.B08 - sample.B04) / (sample.B08 + sample.B04);  // Vegetation
-  let ndbi = (sample.B11 - sample.B08) / (sample.B11 + sample.B08);  // Built-up
-  let mndwi = (sample.B03 - sample.B12) / (sample.B03 + sample.B12); // Modified Water
-  
-  // Terrain analysis (using SWIR bands for rock detection)
-  let rock_index = (sample.B11 - sample.B12) / (sample.B11 + sample.B12);
-  
-  // Classification logic
-  if (ndwi > 0.2 || mndwi > 0.4) {                  // Water
+function evaluatePixel(samples) {
+  let B04 = samples.B04; // Red
+  let B03 = samples.B03; // Green
+  let B08 = samples.B08; // NIR
+  let B11 = samples.B11; // SWIR
+
+  // Compute indices
+  let ndvi = (B08 - B04) / (B08 + B04 + 0.00001);
+  let ndwi = (B03 - B08) / (B03 + B08 + 0.00001);
+  let ndbi = (B11 - B08) / (B11 + B08 + 0.00001);
+
+  // Define thresholds (tune these for your location!)
+  let waterThresh = WATER_PLACEHOLDER;
+  let ndviGrassMin = GRASS_PLACEHOLDER;
+  let ndviTreesMin = TREES_PLACEHOLDER;
+  let ndbiBuildingMin = BUILDING_PLACEHOLDER;
+
+  // 1. WATER
+  if (ndwi > waterThresh) {
     return [1];
-  } else if (ndbi > 0.2 && rock_index < 0.1) {       // Buildings
-    return [0];
-  } else if (ndbi > 0.15 && rock_index > 0.25) {     // Mountains/Rocks
-    return [5]; 
-  } else if (ndvi > 0.2) {                           // Vegetation
-    if (ndvi > 0.6) return [2];                      // Trees
-    if (ndvi > 0.3) return [4];                      // Agriculture
-    return [3];                                       // Grass
-  } else {                                            // Bare soil/other
-    return [6];
   }
+
+  // 2. VEGETATION
+  // If NDVI is above 0.3, we consider vegetation
+  if (ndvi > ndviGrassMin) {
+    if (ndvi > ndviTreesMin) {
+      // Trees
+      return [2];
+    } else {
+      // Grass
+      return [3];
+    }
+  }
+  
+  // 3. BUILDINGS
+  if (ndvi < ndviGrassMin && ndbi > ndbiBuildingMin) {
+    return [0];
+  }
+  
+
+  // 4. OTHER
+  return [6];
 }
-"""
+
+""".replace("WATER_PLACEHOLDER", str(self.ndwi_threshold)) \
+    .replace("GRASS_PLACEHOLDER", str(self.ndvi_grass_min)) \
+    .replace("TREES_PLACEHOLDER", str(self.ndvi_trees_min)) \
+    .replace("BUILDING_PLACEHOLDER", str(self.ndbi_building_min))
